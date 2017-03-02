@@ -1,16 +1,11 @@
 import game
 import neural_net
 import time
+import random
 
 net = neural_net.Net([198, 40, 1])
 gammon = game.Game()
-roll = gammon.roll_dice()
-print "testing..."
-print roll
-print gammon.get_actions(roll, 0)
-
 print "Starting game..."
-
 # 2 players roll dice, the largest goes first using the roll
 # r1 is white, r2 is black
 r1, r2 = (0,0)
@@ -19,22 +14,32 @@ turn = 0
 while r1 == r2:
 	r1, r2 = gammon.roll_dice()
 	if r1 > r2:
-		print "White goes first!"
 		turn = 1
 	elif r2 > r1:
-		print "Black goes first!"
-
+		turn = 0
 start = 1
+moves = 0
+zero_actions = []
+one_actions = []
 while not gammon.game_over():
 	actions = []
 	if start:
 		actions = gammon.get_actions((r1, r2), turn)
 		start = 0
 	else:
-		actions = gammon.get_actions(gammon.roll_dice(), turn)
-		states = []
-		for action in actions:
-			states.append(gammon.apply_action(action, turn))
-		turn = (turn + 1) % 2
-		print len(states)
-		time.sleep(1)
+		roll = gammon.roll_dice()
+		actions = gammon.get_actions(roll, turn)
+	action = None
+	if len(actions) > 0:
+		action = random.choice(actions)
+		gammon.apply_action(action, turn)
+		moves += 1
+		
+	if turn == 0:
+		zero_actions.append(action)
+	else:
+		one_actions.append(action)
+	turn = (turn + 1) % 2
+print "finished!!!"
+print gammon.board
+print moves
