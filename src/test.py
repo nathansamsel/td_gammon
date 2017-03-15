@@ -41,5 +41,9 @@ while not gammon.game_over():
 		one_actions.append(action)
 	turn = (turn + 1) % 2
 print "finished!!!"
-print gammon.board
+if gammon.off_pieces[0] == 15:
+	print "0 wins"
+else:
+	print "1 wins"
+#print gammon.board
 print moves

@@ -5,12 +5,15 @@ import random
 import numpy as np
 
 class Game:
+	
 	def __init__(self):
+		# initialize values to start games
 		self.dice = 6
 		self.board = [[0, 0] for _ in range(0, 24)]
 		self.bar_pieces = [0, 0]
 		self.off_pieces = [0, 0]
 		self.bearing_off = [0,0]
+		self.last_attacked = 0
 		
 		# set up board starting position
 		
@@ -25,7 +28,6 @@ class Game:
 		self.board[11][0] = 5
 		self.board[16][0] = 3
 		self.board[18][0] = 5
-		#print self.board
 		
 	def roll_dice(self):
 		return (random.randint(1, 6), random.randint(1, 6))
@@ -34,6 +36,9 @@ class Game:
 	def get_actions(self, roll, player):
 		actions = []
 		r1, r2 = roll
+		
+		#0 goes +
+		# 1 goes -
 		
 		# check for bearing off of black
 		for i in range(0, 24):
@@ -51,42 +56,42 @@ class Game:
 		
 		# check for moves to get off bar if on the bar
 		if self.bar_pieces[0] > 0 and player == 0:
-			for i in range(0, 5):
+			for i in range(0, 6):
 				if self.board[i][1] <= 1 and r1 == i:
 					actions.append(('bar', r1))
 					#print "bar1"
-			for i in range(0, 5):
+			for i in range(0, 6):
 				if self.board[i][1] <= 1 and r2 == i and r1 != r2:
 					actions.append(('bar', r2))
 					#print "bar2"
 					
 		elif self.bar_pieces[1] > 0 and player == 1:
-			for i in range(17, 23):
-				if self.board[i][0] <= 1 and r1 == 23 - i:
-					actions.append(('bar', 23 - i))
-			for i in range(17, 23):
-				if self.board[i][0] <= 1 and r2 == 23 - i and r1 != r2:
-					actions.append(('bar', 23 - i))
+			for i in range(18, 24):
+				if self.board[i][0] <= 1 and r1 == 24 - i:
+					actions.append(('bar', 24 - r1))
+			for i in range(18, 24):
+				if self.board[i][0] <= 1 and r2 == 24 - i and r1 != r2:
+					actions.append(('bar', 24 - r2))
 			
 		# check for bearning off moves
 		elif self.bearing_off[player] == 1:
 			if player == 0:
 				removed = -1
-				for i in range(17, 24):
-					if self.board[i][player] > 0 and 23 - i < r1:
+				for i in range(18, 24):
+					if self.board[i][player] > 0 and 24 - i <= r1:
 						actions.append((i, 'off'))
 						removed = i
-				for i in range(17, 24):
-					if self.board[i][player] > 0 and 23 - i < r2 and i != removed:
+				for i in range(18, 24):
+					if self.board[i][player] > 0 and 24 - i <= r2 and i != removed:
 						actions.append((i, 'off'))
 			else:
 				removed = -1
 				for i in range(0, 6):
-					if self.board[i][player] > 0 and i < r1:
+					if self.board[i][player] > 0 and i <= r1:
 						actions.append((i, 'off'))
 						removed = i
 				for i in range(0, 6):
-					if self.board[i][player] > 0 and i < r2 and i != removed:
+					if self.board[i][player] > 0 and i <= r2 and i != removed:
 						actions.append((i, 'off'))
 						
 		# check for regular moves
@@ -95,30 +100,30 @@ class Game:
 				if self.board[i][player] != 0:
 					if player == 0:
 						# test r1 moves
-						if i + r1 <= 23:
+						if i + r1 <= 23 and r1 != 0:
 							if self.board[i+r1][1] <= 1:
 								actions.append((i, i+r1))
 						# test r2 moves
-						if i + r2 <= 23:
+						if i + r2 <= 23 and r2 != 0 and r2 != r1:
 							if self.board[i+r2][1] <= 1:
 								actions.append((i, i+r2))
 						# test r1 + r2 moves
 						# check validity of intermediate move first
-						if i + r1 + r2 <= 23:
+						if i + r1 + r2 <= 23 and r1 != 0 and r2 != 0:
 							if self.board[i+r1+r2][1] <=1 and self.board[i+r1][1] == 0:	
 								actions.append((i, i+r1+r2))
 					else:
 						# test r1 moves
-						if i - r1 >= 0:
+						if i - r1 >= 0 and r1 != 0:
 							if self.board[i-r1][0] <= 1:
 								actions.append((i, i-r1))
 						# test r2 moves
-						if i - r2 >= 0:
+						if i - r2 >= 0 and r2 != 0 and r2 != r1:
 							if self.board[i-r2][0] <= 1:
 								actions.append((i, i-r2))
 						# test r1 + r2 moves
 						# check validity of intermediate move first
-						if i - r1 - r2 >= 0:
+						if i - r1 - r2 >= 0 and r1 != 0 and r2 != 0:
 							if self.board[i-r1-r2][0] <= 1 and self.board[i-r1][0] == 0:
 								actions.append((i, i-r1-r2))
 		return actions
@@ -130,6 +135,7 @@ class Game:
 			self.off_pieces[player] += 1
 		elif start == 'bar':
 			if self.board[end][(player + 1) % 2] == 1:
+				self.last_attacked = 1
 				self.board[end][(player + 1) % 2] = 0
 				self.bar_pieces[(player + 1) % 2] += 1
 			self.bar_pieces[player] -= 1
@@ -137,6 +143,7 @@ class Game:
 		else:
 			# attack opponent piece and move to bar
 			if self.board[end][(player + 1) % 2] == 1:
+				self.last_attacked = 1
 				self.board[end][(player + 1) % 2] = 0
 				self.bar_pieces[(player + 1) % 2] += 1
 			# remove from starting position and move to end position
@@ -150,10 +157,15 @@ class Game:
 			self.board[start][player] += 1
 			self.off_pieces[player] -= 1
 		elif start == 'bar':
+			if self.last_attacked:
+				self.board[end][(player + 1) % 2] = 1
+				self.bar_pieces[(player + 1) % 2] -= 1
 			self.bar_pieces[player] += 1
 			self.board[end][player] -= 1
 		else:
-			# remove from starting position and move to end position
+			if self.last_attacked:
+				self.board[end][(player + 1) % 2] = 1
+				self.bar_pieces[(player + 1) % 2] -= 1
 			self.board[start][player] += 1
 			self.board[end][player] -= 1
 	
